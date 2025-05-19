@@ -25,10 +25,5 @@ class ItemPedido {
     }
   }
   
-  // Exemplo de uso
-  const item1 = new ItemPedido(1, 'Produto A', 2, 15.50);
-  console.log(item1.toString());
-  
-  item1.atualizarQuantidade(3);
-  console.log(item1.toString());
+module.exports = ItemPedido;
   
