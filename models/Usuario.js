@@ -1,32 +1,48 @@
-class Usuario {
-    constructor(Id, nome, email,senha, dataNascimento, endereco){
-        this.id = id;
-        this.nome = nome;
-        this.emai = email;
-        this.senha = senha;
-        this.dataNascimento = dataNascimento;
-        this.endereco = endereco;
-        this.pedidos = [];
-        }
+const { Model, DataTypes } = require('sequelize');
+const sequelize = require('../db/connection');
+const bcrypt = require('bcrypt'); // <--- Importação do bcrypt adicionada
+const Carrinho = require('./Carrinho');
+const CarrinhoItem = require('./CarrinhoItem');
 
-    cadastrar(){
-        // salvar no banco
-    }
-
-    login(email,senha){
-        return this.email === email && this.senha === senha;
-    }
-
-    alterarDados(novosDados){
-        Object.assign(this, novosDados);
-    }
-
-    excluirConta(){
-        //excluir conta
-    }
-    visualizarHistorico(){
-        return this.pedidos;
-    }
+class UsuarioModel extends Model {
+  async autenticar(senha) {
+    return await bcrypt.compare(senha, this.senha_hash);
+  }
 }
 
-module.exports = Usuario;
+UsuarioModel.init({
+  id: {
+    type: DataTypes.UUID,
+    primaryKey: true,
+    defaultValue: DataTypes.UUIDV4,
+  },
+  nome: DataTypes.STRING,
+  email: {
+    type: DataTypes.STRING,
+    unique: true,
+  },
+  senha_hash: DataTypes.STRING,
+  dataNascimento: DataTypes.DATEONLY,
+  endereco: DataTypes.STRING,
+  ativo: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  }
+}, {
+  sequelize,
+  modelName: 'Usuario',
+  hooks: {
+    beforeCreate: async (usuario) => {
+      if (usuario.senha_hash) {
+        usuario.senha_hash = await bcrypt.hash(usuario.senha_hash, 10);
+      }
+    },
+    beforeUpdate: async (usuario) => {
+      if (usuario.changed('senha_hash')) {
+        usuario.senha_hash = await bcrypt.hash(usuario.senha_hash, 10);
+      }
+    }
+  }
+});
+
+module.exports = UsuarioModel;

@@ -1,43 +1,114 @@
 const Carrinho = require('../models/Carrinho');
+const CarrinhoItem = require('../models/CarrinhoItem');
 const Produto = require('../models/Produto');
+const { v4: uuidv4 } = require('uuid');
 
-// Instância única de carrinho (simulando um usuário)
-const carrinho = new Carrinho();
+const encontrarOuCriarCarrinho = async (usuarioId) => {
+  let carrinho = await Carrinho.findOne({ where: { usuarioId } });
+  if (!carrinho) {
+    carrinho = await Carrinho.create({ id: uuidv4(), usuarioId });
+  }
+  return carrinho;
+};
 
-const adicionarProduto = (req, res) => {
-  const { id, nome, preco, descricao, estoque } = req.body;
-  const { quantidade } = req.body;
+const adicionarProduto = async (req, res) => {
+  const usuarioId = req.body.usuarioId;
+  const { produtoId, quantidade } = req.body;
 
-  if (!id || !nome || !preco || !quantidade) {
-    return res.status(400).json({ mensagem: "Dados do produto ou quantidade estão incompletos." });
+  if (!usuarioId || !produtoId || !quantidade) {
+    return res.status(400).json({ mensagem: "Campos obrigatórios faltando." });
   }
 
-  const produto = new Produto(id, nome, preco, descricao, estoque);
-  carrinho.adicionarProduto(produto, quantidade);
+  const produto = await Produto.findByPk(produtoId);
+  if (!produto) return res.status(404).json({ mensagem: "Produto não encontrado." });
 
-  res.status(201).json({ mensagem: "Produto adicionado ao carrinho.", carrinho: carrinho.listarItens() });
+  const carrinho = await encontrarOuCriarCarrinho(usuarioId);
+
+  let item = await CarrinhoItem.findOne({ where: { carrinhoId: carrinho.id, produtoId } });
+  if (item) {
+    item.quantidade += quantidade;
+    await item.save();
+  } else {
+    await CarrinhoItem.create({
+      carrinhoId: carrinho.id,
+      produtoId,
+      quantidade
+    });
+  }
+
+  res.status(201).json({ mensagem: "Produto adicionado ao carrinho." });
 };
 
-const listarCarrinho = (req, res) => {
-  res.json({ itens: carrinho.listarItens(), total: carrinho.calcularTotal() });
+const listarCarrinho = async (req, res) => {
+  try {
+    // Verifica se usuarioId foi fornecido e é válido
+    const usuarioId = req.params.usuarioId;
+    
+    if (!usuarioId || usuarioId === 'null' || usuarioId === 'undefined') {
+      return res.json({ itens: [], total: 0 });
+    }
+
+    const carrinho = await Carrinho.findOne({ 
+      where: { usuarioId },
+      include: [{
+        model: CarrinhoItem,
+        include: [Produto]
+      }]
+    });
+
+    if (!carrinho) {
+      return res.json({ itens: [], total: 0 });
+    }
+
+    // Calcula o total
+    const total = carrinho.CarrinhoItems.reduce((sum, item) => {
+      return sum + (item.quantidade * item.Produto.preco);
+    }, 0);
+
+    res.json({
+      itens: carrinho.CarrinhoItems,
+      total
+    });
+  } catch (error) {
+    console.error('Erro ao listar carrinho:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
 };
 
-const removerProduto = (req, res) => {
-  const { id } = req.params;
-  carrinho.removerProduto(parseInt(id));
-  res.json({ mensagem: "Produto removido do carrinho.", carrinho: carrinho.listarItens() });
+const removerProduto = async (req, res) => {
+  const { usuarioId, produtoId } = req.body;
+
+  const carrinho = await Carrinho.findOne({ where: { usuarioId } });
+  if (!carrinho) return res.status(404).json({ mensagem: "Carrinho não encontrado." });
+
+  await CarrinhoItem.destroy({ where: { carrinhoId: carrinho.id, produtoId } });
+
+  res.json({ mensagem: "Produto removido do carrinho." });
 };
 
-const atualizarQuantidade = (req, res) => {
-  const { id } = req.params;
-  const { quantidade } = req.body;
+const atualizarQuantidade = async (req, res) => {
+  const { usuarioId, produtoId, quantidade } = req.body;
 
-  carrinho.atualizarQuantidade(parseInt(id), quantidade);
-  res.json({ mensagem: "Quantidade atualizada.", carrinho: carrinho.listarItens() });
+  const carrinho = await Carrinho.findOne({ where: { usuarioId } });
+  if (!carrinho) return res.status(404).json({ mensagem: "Carrinho não encontrado." });
+
+  const item = await CarrinhoItem.findOne({ where: { carrinhoId: carrinho.id, produtoId } });
+  if (!item) return res.status(404).json({ mensagem: "Produto não está no carrinho." });
+
+  item.quantidade = quantidade;
+  await item.save();
+
+  res.json({ mensagem: "Quantidade atualizada." });
 };
 
-const limparCarrinho = (req, res) => {
-  carrinho.limparCarrinho();
+const limparCarrinho = async (req, res) => {
+  const { usuarioId } = req.body;
+
+  const carrinho = await Carrinho.findOne({ where: { usuarioId } });
+  if (!carrinho) return res.status(404).json({ mensagem: "Carrinho não encontrado." });
+
+  await CarrinhoItem.destroy({ where: { carrinhoId: carrinho.id } });
+
   res.json({ mensagem: "Carrinho esvaziado." });
 };
 

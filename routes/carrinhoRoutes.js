@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const carrinhoController = require('../controllers/CarrinhoController');
+const CarrinhoController = require('../controllers/CarrinhoController');
 
-router.post('/adicionar', carrinhoController.adicionarProduto);
-router.get('/', carrinhoController.listarCarrinho);
-router.delete('/remover/:id', carrinhoController.removerProduto);
-router.put('/atualizar/:id', carrinhoController.atualizarQuantidade);
-router.delete('/limpar', carrinhoController.limparCarrinho);
+
+router.post('/adicionar', CarrinhoController.adicionarProduto);
+router.get('/:usuarioId', CarrinhoController.listarCarrinho);
+router.post('/remover', CarrinhoController.removerProduto);
+router.post('/atualizar', CarrinhoController.atualizarQuantidade);
+router.post('/limpar', CarrinhoController.limparCarrinho);
+
 
 module.exports = router;

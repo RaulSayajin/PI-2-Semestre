@@ -1,29 +1,46 @@
+// models/ItemPedido.js
+module.exports = (sequelize, DataTypes) => {
+  const ItemPedido = sequelize.define('ItemPedido', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    nome: {
+      type: DataTypes.STRING(150),
+      allowNull: false
+    },
+    quantidade: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1
+    },
+    precoUnitario: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false
+    },
+    precoTotal: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.get('quantidade') * this.get('precoUnitario');
+      }
+    }
+  }, {
+    tableName: 'itens_pedido',
+    schema: process.env.DB_SCHEMA,
+    timestamps: false
+  });
 
-class ItemPedido {
-    constructor(id, nome, quantidade, precoUnitario) {
-      this.id = id;
-      this.nome = nome;
-      this.quantidade = quantidade;
-      this.precoUnitario = precoUnitario;
-      this.precoTotal = this.calcularPrecoTotal();
-    }
-  
-    // Método para calcular o preço total do item (quantidade * preço unitário)
-    calcularPrecoTotal() {
-      return this.quantidade * this.precoUnitario;
-    }
-  
-    // Método para atualizar a quantidade e recalcular o preço total
-    atualizarQuantidade(novaQuantidade) {
-      this.quantidade = novaQuantidade;
-      this.precoTotal = this.calcularPrecoTotal();
-    }
-  
-    // Método para renderizar o item em formato de string
-    toString() {
-      return `${this.nome} - Quantidade: ${this.quantidade}, Preço Unitário: R$${this.precoUnitario.toFixed(2)}, Preço Total: R$${this.precoTotal.toFixed(2)}`;
-    }
-  }
-  
-module.exports = ItemPedido;
-  
+  ItemPedido.associate = (models) => {
+    ItemPedido.belongsTo(models.Pedido, {
+      foreignKey: 'pedidoId',
+      as: 'pedido'
+    });
+    ItemPedido.belongsTo(models.Produto, {
+      foreignKey: 'produtoId',
+      as: 'produto'
+    });
+  };
+
+  return ItemPedido;
+};
