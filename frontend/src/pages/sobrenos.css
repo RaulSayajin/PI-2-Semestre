@@ -154,3 +154,51 @@
   color: #047857;
   font-weight: 600;
 }
+
+.sobrenos-horarios-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.sobrenos-horarios-tabela th,
+.sobrenos-horarios-tabela td {
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.sobrenos-horarios-tabela th {
+  background: #2563eb; /* azul frio */
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  border-bottom: 2px solid #fff;
+}
+
+.sobrenos-horarios-tabela tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.sobrenos-horarios-tabela tr:nth-child(odd) {
+  background: #fff;
+}
+
+.sobrenos-horarios-tabela td[colspan] {
+  color: #ff3333;
+  font-weight: bold;
+  background: #ffeaea;
+}
+
+.sobrenos-horarios-tabela td {
+  font-size: 0.98rem;
+}
+
+.sobrenos-horarios-tabela tr:hover {
+  background: #fffbe7;
+  transition: background 0.2s;
+}
+
