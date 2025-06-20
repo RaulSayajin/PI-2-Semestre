@@ -1,0 +1,6 @@
+
+# Pasta com as dependências do Node.js
+node_modules/
+
+# Arquivo de variáveis de ambiente
+.env
